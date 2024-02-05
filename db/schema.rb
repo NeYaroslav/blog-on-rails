@@ -62,6 +62,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_03_165804) do
     t.text "content"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "image_url"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

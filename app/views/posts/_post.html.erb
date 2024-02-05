@@ -1,3 +1,4 @@
+<% default_img_url = "https://st.depositphotos.com/2934765/53192/v/450/depositphotos_531920820-stock-illustration-photo-available-vector-icon-default.jpg" %>
 <div id="<%= dom_id post %>">
   <p>
     <strong>Title:</strong>
@@ -11,11 +12,11 @@
   
   <div>
     <% if post.image_url.present? %>
-      <img src="<%= post.image_url %>" alt="Image for <%= post.title%>">
+      <%= image_tag url_for(post.image_url) %>
     <% elsif post.image_file.attached? %>
-      <img src="<%= post.image_file%>" alt="Image for <%= post.title%>">
+      <%= image_tag url_for(post.image_file) %>
     <% else %>
-      <img src="https://st.depositphotos.com/2934765/53192/v/450/depositphotos_531920820-stock-illustration-photo-available-vector-icon-default.jpg" alt="Image for <%= post.title%>">
+      <%= image_tag url_for(default_img_url)%>
     <% end %>
   </div>
 
