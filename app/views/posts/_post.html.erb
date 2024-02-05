@@ -9,15 +9,26 @@
     <%= time_tag post.updated_at, "data-local": "time-ago" %>
   </p>
   
+  <div>
+    <% if post.image_url.present? %>
+      <img src="<%= post.image_url %>" alt="Image for <%= post.title%>">
+    <% elsif post.image_file.attached? %>
+      <img src="<%= post.image_file%>" alt="Image for <%= post.title%>">
+    <% else %>
+      <img src="https://st.depositphotos.com/2934765/53192/v/450/depositphotos_531920820-stock-illustration-photo-available-vector-icon-default.jpg" alt="Image for <%= post.title%>">
+    <% end %>
+  </div>
+
+  <p>
+    <strong>Content:</strong>
+    <%= post.content %>
+  </p>
+  
   <p>
     <strong>
       <%= pluralize post.comments.count, "comment" %>
     </strong>
   </p>
 
-  <p>
-    <strong>Content:</strong>
-    <%= post.content %>
-  </p>
 
 </div>
