@@ -1,5 +1,10 @@
+require "httparty"
+require "nokogiri"
+
+
+
 class PostsController < ApplicationController
-  before_action :set_post, only: %i[ show edit update destroy ]
+  before_action :set_post, only: %i[ show edit update destroy]
 
   # GET /posts or /posts.json
   def index
@@ -19,11 +24,40 @@ class PostsController < ApplicationController
   def edit
   end
 
+  def create_from_html
+    root_link = "http://csbc.edu.ua/"
+    response_news = HTTParty.get(root_link)
+    news = Nokogiri::HTML(response_news.body)
+
+    count = 0
+
+    news.css("a.btn.medium").each.with_index do |html_link, index|
+      endpoint = html_link.attribute("href").value;
+      response_post = HTTParty.get("#{root_link}/#{endpoint}");
+      post = Nokogiri::HTML(response_post.body);
+
+      post_id = endpoint[endpoint.index("=") + 1..-1];
+      post_title = post.css("h2").first.text;
+      post_description = post.css(".one_half p").inner_text;
+      post_image = "#{root_link}/#{post.css(".preview img").first.attribute("src").value}";
+      post = Post.new(
+        title: post_title,
+        content: post_description,
+        image_url: post_image,
+        parsed_id: post_id
+      );
+      count += 1 if post.save
+    end
+
+
+    respond_to do |format|
+      format.html { redirect_to posts_url, notice: "#{count} posts were successfully parsed." }
+      format.json { head :no_content }
+    end
+  end
   # POST /posts or /posts.json
   def create
     @post = Post.new(post_params)
-    debugger
-
     respond_to do |format|
       if @post.save
         format.html { redirect_to post_url(@post), notice: "Post was successfully created." }
@@ -67,6 +101,6 @@ class PostsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def post_params
-      params.require(:post).permit(:title, :content, :image_url, :image_file)
+      params.require(:post).permit(:title, :content, :image_url, :image_file, :html_file)
     end
 end
