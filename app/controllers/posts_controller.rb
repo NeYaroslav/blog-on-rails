@@ -26,27 +26,40 @@ class PostsController < ApplicationController
 
   def create_from_html
     root_link = "http://csbc.edu.ua/"
+    count = 0
     response_news = HTTParty.get(root_link)
     news = Nokogiri::HTML(response_news.body)
 
-    count = 0
+    news.css("a.btn.medium").each do |html_link|
+      endpoint = html_link.attribute("href").value
+      retry_count = 0
+      post_id = endpoint[endpoint.index("=") + 1..-1]
 
-    news.css("a.btn.medium").each.with_index do |html_link, index|
-      endpoint = html_link.attribute("href").value;
-      response_post = HTTParty.get("#{root_link}/#{endpoint}");
-      post = Nokogiri::HTML(response_post.body);
+      next if Post.exists?(post_id: post_id)
 
-      post_id = endpoint[endpoint.index("=") + 1..-1];
-      post_title = post.css("h2").first.text;
-      post_description = post.css(".one_half p").inner_text;
-      post_image = "#{root_link}/#{post.css(".preview img").first.attribute("src").value}";
+      begin
+        response_post = HTTParty.get("#{root_link}/#{endpoint}", {timeout: 120})
+      rescue => error
+        if retry_count < 5
+          retry_count += 1
+          sleep(5 * retry_count)
+          retry
+        end
+      end
+
+      post = Nokogiri::HTML(response_post.body)
+      post_title = post.css("h2").first.text
+      post_description = post.css(".one_half p").inner_text
+      post_image = "#{root_link}/#{post.css(".preview img").first.attribute("src").value}"
+
       post = Post.new(
         title: post_title,
         content: post_description,
         image_url: post_image,
         parsed_id: post_id
-      );
+      )
       count += 1 if post.save
+      sleep(5)
     end
 
 
