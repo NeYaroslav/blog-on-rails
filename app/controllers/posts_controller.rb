@@ -1,8 +1,3 @@
-require "httparty"
-require "nokogiri"
-
-
-
 class PostsController < ApplicationController
   before_action :set_post, only: %i[ show edit update destroy]
 
@@ -25,46 +20,10 @@ class PostsController < ApplicationController
   end
 
   def create_from_html
-    root_link = "http://csbc.edu.ua/"
-    count = 0
-    response_news = HTTParty.get(root_link)
-    news = Nokogiri::HTML(response_news.body)
-
-    news.css("a.btn.medium").each do |html_link|
-      endpoint = html_link.attribute("href").value
-      retry_count = 0
-      post_id = endpoint[endpoint.index("=") + 1..-1]
-
-      next if Post.exists?(post_id: post_id)
-
-      begin
-        response_post = HTTParty.get("#{root_link}/#{endpoint}", {timeout: 120})
-      rescue => error
-        if retry_count < 5
-          retry_count += 1
-          sleep(5 * retry_count)
-          retry
-        end
-      end
-
-      post = Nokogiri::HTML(response_post.body)
-      post_title = post.css("h2").first.text
-      post_description = post.css(".one_half p").inner_text
-      post_image = "#{root_link}/#{post.css(".preview img").first.attribute("src").value}"
-
-      post = Post.new(
-        title: post_title,
-        content: post_description,
-        image_url: post_image,
-        parsed_id: post_id
-      )
-      count += 1 if post.save
-      sleep(5)
-    end
-
+    ParsePostsJob.perform_later()
 
     respond_to do |format|
-      format.html { redirect_to posts_url, notice: "#{count} posts were successfully parsed." }
+      format.html { redirect_to posts_url, notice: "Posts' parsing has been started." }
       format.json { head :no_content }
     end
   end
